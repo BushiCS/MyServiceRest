@@ -118,7 +118,7 @@ public class ProductRepository implements JDBCRepository<Product> {
              PreparedStatement statement = connection.prepareStatement(sqlQuery)) {
             statement.setLong(1, userId);
             ResultSet resultSet = statement.executeQuery();
-            productList = mapper.mapToProducts(resultSet);
+            productList = mapper.mapToUserProducts(resultSet);
             sessionManager.commitSession();
         } catch (SQLException e) {
             sessionManager.rollbackSession();
@@ -137,7 +137,7 @@ public class ProductRepository implements JDBCRepository<Product> {
             statement.setLong(1, productId);
             statement.setLong(2, userId);
             ResultSet set = statement.executeQuery();
-            product = mapper.mapToProduct(set);
+            product = mapper.mapToUserProduct(set);
             sessionManager.commitSession();
         } catch (SQLException e) {
             e.printStackTrace();

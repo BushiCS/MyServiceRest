@@ -112,7 +112,7 @@ public class UserRepository implements JDBCRepository<User> {
             statement.setLong(1, userId);
             statement.setLong(2, productId);
             ResultSet set = statement.executeQuery();
-            user = mapper.mapToUser(set);
+            user = mapper.mapToProductUser(set);
             sessionManager.commitSession();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -129,7 +129,7 @@ public class UserRepository implements JDBCRepository<User> {
              PreparedStatement statement = connection.prepareStatement(sqlQuery)) {
             statement.setLong(1, productId);
             ResultSet set = statement.executeQuery();
-            userList = mapper.mapToUsers(set);
+            userList = mapper.mapToProductUsers(set);
             sessionManager.commitSession();
         } catch (SQLException e) {
             e.printStackTrace();

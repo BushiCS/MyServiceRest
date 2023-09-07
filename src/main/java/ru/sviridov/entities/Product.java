@@ -2,6 +2,7 @@ package ru.sviridov.entities;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.List;
 import java.util.Objects;
 
 @JsonPropertyOrder({"id","title","price"})
@@ -11,6 +12,9 @@ public class Product {
     private String title;
     private int price;
 
+    List<User> users;
+
+
     public Product() {
     }
 
@@ -18,6 +22,18 @@ public class Product {
         this.id = id;
         this.title = title;
         this.price = price;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 
     public long getId() {

@@ -112,7 +112,9 @@ public class UserRepositoryTest {
     void update() {
         long updatedRows = 0;
         long id = 1;
-        User user = new User(1, "Michael");
+        User user = new User();
+        user.setId(1);
+        user.setName("Michael");
         String sqlQuery = "UPDATE users set name= (?) where id=(?)";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);

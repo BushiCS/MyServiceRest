@@ -2,12 +2,17 @@ package ru.sviridov.entities;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.List;
 import java.util.Objects;
 
 @JsonPropertyOrder({"id", "name", "password"})
 public class User {
     private long id;
     private String name;
+
+    private List<Card> cards;
+
+    private List<Product> products;
 
     public User() {
     }
@@ -31,6 +36,22 @@ public class User {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public List<Card> getCards() {
+        return cards;
+    }
+
+    public void setCards(List<Card> cards) {
+        this.cards = cards;
+    }
+
+    public List<Product> getProducts() {
+        return products;
+    }
+
+    public void setProducts(List<Product> products) {
+        this.products = products;
     }
 
     @Override
