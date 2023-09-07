@@ -3,6 +3,7 @@ package ru.sviridov.servlets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.sviridov.entities.Product;
 import ru.sviridov.entities.User;
+import ru.sviridov.mappers.RequestMapper;
 import ru.sviridov.services.ProductService;
 import ru.sviridov.services.UserService;
 
@@ -17,13 +18,15 @@ import java.io.UnsupportedEncodingException;
 @WebServlet({"/products/*", "/products"})
 public class RestProductServlet extends HttpServlet {
 
-    UserService userService;
+    private UserService userService;
     private ProductService productService;
+    private RequestMapper mapper;
 
     @Override
     public void init() {
         userService = new UserService();
         productService = new ProductService();
+        mapper = new RequestMapper();
     }
 
     @Override
@@ -96,7 +99,8 @@ public class RestProductServlet extends HttpServlet {
         setCharacterEncoding(req);
         if (pathInfo.matches("^/$")) {
             try {
-                boolean isInserted = productService.insert(req);
+                Product product = mapper.mapToProduct(req);
+                boolean isInserted = productService.insert(product);
                 if (isInserted) {
                     resp.getWriter().write("Product has added");
                     resp.setStatus(200);
@@ -118,7 +122,8 @@ public class RestProductServlet extends HttpServlet {
             String[] parts = pathInfo.split("/");
             try {
                 long productId = Long.parseLong(parts[1]);
-                long updatedRows = productService.update(productId, req);
+                Product product = mapper.mapJsonToProduct(req);
+                long updatedRows = productService.update(productId, product);
                 if (updatedRows != 0) {
                     resp.getWriter().write("Product was updated");
                     resp.setStatus(200);

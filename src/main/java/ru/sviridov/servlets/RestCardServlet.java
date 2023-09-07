@@ -2,6 +2,7 @@ package ru.sviridov.servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.sviridov.entities.Card;
+import ru.sviridov.mappers.RequestMapper;
 import ru.sviridov.services.CardService;
 
 import javax.servlet.annotation.WebServlet;
@@ -17,10 +18,11 @@ import java.sql.SQLException;
 public class RestCardServlet extends HttpServlet {
 
     private CardService cardService;
-
+    private RequestMapper mapper;
     @Override
     public void init() {
         cardService = new CardService();
+        mapper = new RequestMapper();
     }
 
     @Override
@@ -59,7 +61,8 @@ public class RestCardServlet extends HttpServlet {
         setCharacterEncoding(req);
         if (pathInfo.matches("^/$")) {
             try {
-                boolean isInserted = cardService.insert(req);
+                Card card = mapper.mapToCard(req);
+                boolean isInserted = cardService.insert(card);
                 if (isInserted) {
                     resp.getWriter().write("Card has added");
                     resp.setStatus(200);
@@ -81,7 +84,8 @@ public class RestCardServlet extends HttpServlet {
             String[] parts = pathInfo.split("/");
             try {
                 long cardId = Long.parseLong(parts[1]);
-                long updatedRows = cardService.update(cardId, req);
+                Card card = mapper.mapJsonToCard(req);
+                long updatedRows = cardService.update(cardId, card);
                 if (updatedRows != 0) {
                     resp.getWriter().write("Card was updated");
                     resp.setStatus(200);

@@ -144,4 +144,11 @@ public class ProductRepository implements JDBCRepository<Product> {
         }
         return product;
     }
+
+    @Override
+    public String toString() {
+        return "ProductRepository{" +
+                "sessionManager=" + sessionManager +
+                '}';
+    }
 }

@@ -23,7 +23,7 @@ public class UserRepositoryTest {
     private static Connection connection;
     private static UserRepository repository;
 
-    private JdbcMapper mapper = new JdbcMapper();
+    private final JdbcMapper mapper = new JdbcMapper();
     @Container
     @ClassRule
     public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres")
@@ -110,7 +110,7 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("update user")
     void update() {
-        long updatedRows = 0;
+        long updatedRows;
         long id = 1;
         User user = new User();
         user.setId(1);
@@ -175,7 +175,7 @@ public class UserRepositoryTest {
     @DisplayName("get product users")
     void getProductUsers() {
         long productId = 1;
-        List<User> users = new ArrayList<>();
+        List<User> users;
         String sqlQuery = "select u.id, u.name from users u join users_products up " +
                 "on u.id = up.user_id join products p on p.id = up.product_id and p.id = (?);";
         try {
@@ -194,7 +194,7 @@ public class UserRepositoryTest {
     void getProductUserByUserId() {
         long userId = 2;
         long productId = 1;
-        User user = null;
+        User user;
         String sqlQuery = "select u.id, u.name from users u join users_products up " +
                 "on u.id = up.user_id and u.id = (?) join products p on p.id = up.product_id and p.id = (?);";
         try {
@@ -216,7 +216,7 @@ public class UserRepositoryTest {
         String userName = "Jack";
         String sqlQuery = "insert into users_products (user_id, product_id) select u.id, p.id from users u, products p" +
                 " where u.name = ? and p.title = ?;";
-        int insertedRows = 0;
+        int insertedRows;
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
             preparedStatement.setString(1, userName);

@@ -11,9 +11,9 @@ public interface EntityService<T> {
 
     T getById(long id) throws SQLException;
 
-    boolean insert(HttpServletRequest req) throws SQLException, IOException;
+    boolean insert(T obj) throws SQLException, IOException;
 
-    long update(long id, HttpServletRequest req) throws SQLException, IOException;
+    long update(long id, T obj) throws SQLException, IOException;
 
     long deleteById(long id) throws SQLException;
 

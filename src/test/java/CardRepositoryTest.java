@@ -2,25 +2,22 @@ import org.junit.ClassRule;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ru.sviridov.entities.Product;
+import ru.sviridov.entities.Card;
 import ru.sviridov.mappers.JdbcMapper;
-import ru.sviridov.repositories.ProductRepository;
+import ru.sviridov.repositories.CardRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Testcontainers
-public class ProductRepositoryTest {
+public class CardRepositoryTest {
 
     private static Statement statement;
     private static Connection connection;
-    private static ProductRepository repository;
+    private static CardRepository repository;
 
     private final JdbcMapper mapper = new JdbcMapper();
     @Container
@@ -41,7 +38,7 @@ public class ProductRepositoryTest {
                     postgreSQLContainer.getPassword()
             );
             statement = connection.createStatement();
-            repository = new ProductRepository(new SessionManagerImpl(
+            repository = new CardRepository(new SessionManagerImpl(
                     "org.postgresql.Driver",
                     postgreSQLContainer.getJdbcUrl(),
                     postgreSQLContainer.getUsername(),
@@ -77,86 +74,87 @@ public class ProductRepositoryTest {
     }
 
     @Test
-    @DisplayName("get all products")
+    @DisplayName("get all cards")
     void getAll() {
-        List<Product> productList = new ArrayList<>();
-        String sqlQuery = "SELECT * FROM products";
+        List<Card> cards;
+        String sqlQuery = "SELECT * FROM cards;";
         try {
             ResultSet set = statement.executeQuery(sqlQuery);
-            productList = mapper.mapToProducts(set);
+            cards = mapper.mapToCards(set);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        Assertions.assertEquals(productList, repository.getAll());
+        Assertions.assertEquals(cards, repository.getAll());
     }
 
     @Test
-    @DisplayName("get product by id")
+    @DisplayName("get cards by id")
     void getById() {
-        Product product;
+        Card card;
         long id = 1;
-        String sqlQuery = "SELECT * FROM products WHERE id = (?);";
+        String sqlQuery = "SELECT * FROM cards WHERE id = (?)";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
             preparedStatement.setLong(1, id);
             ResultSet set = preparedStatement.executeQuery();
-            product = mapper.mapToProduct(set);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(product, repository.getById(id));
-    }
-
-    @Test
-    @DisplayName("update product")
-    void update() {
-        long updatedRows;
-        long id = 1;
-        Product product = new Product();
-        String sqlQuery = "UPDATE products set title = (?), price = (?) where id=(?)";
-        product.setTitle("Almond Milk");
-        product.setPrice(180);
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setString(1, product.getTitle());
-            preparedStatement.setInt(2, product.getPrice());
-            preparedStatement.setLong(3, id);
-            updatedRows = preparedStatement.executeUpdate();
+            card = mapper.mapToCard(set);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(updatedRows, repository.update(id, product));
+        Assertions.assertEquals(card, repository.getById(id));
     }
 
     @Test
-    @DisplayName("insert product")
+    @DisplayName("insert card")
     void insert() {
-        Product product = new Product();
-        product.setId(25);
-        product.setTitle("Tomatoes 1 kg");
-        product.setPrice(50);
-        String sqlQuery = "INSERT INTO products values ((?), (?), (?));";
+        Card card = new Card();
+        card.setId(10);
+        card.setTitle("VTB+");
+        card.setNumber("236 124");
+        card.setUserId(3);
+        String sqlQuery = "INSERT INTO cards values ((?), (?), (?), (?));";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, product.getId());
-            preparedStatement.setString(2, product.getTitle());
-            preparedStatement.setInt(3, product.getPrice());
+            preparedStatement.setLong(1, card.getId());
+            preparedStatement.setString(2, card.getTitle());
+            preparedStatement.setString(3, card.getNumber());
+            preparedStatement.setLong(4, card.getUserId());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertTrue(repository.insert(product));
-        Assertions.assertEquals(product, repository.getById(product.getId()));
+        Assertions.assertTrue(repository.insert(card));
+        Assertions.assertEquals(card, repository.getById(card.getId()));
+    }
+
+
+    @Test
+    @DisplayName("update card")
+    void update() {
+        long updatedRows;
+        long id = 1;
+        String sqlQuery = "UPDATE cards set title = (?) where id = (?);";
+        Card card = new Card();
+        card.setTitle("VTB+");
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+            preparedStatement.setString(1, card.getTitle());
+            preparedStatement.setLong(2, id);
+            updatedRows = preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        Assertions.assertEquals(updatedRows, repository.update(id, card));
     }
 
     @Test
-    @DisplayName("delete product by id")
-    void deleteById() {
-        long firstProductId = 2;
-        long secondProductId = 50;
+    @DisplayName("delete card")
+    void delete() {
+        long firstCardId = 2;
+        long secondCardId = 50;
         long deletedRows;
-        String deleteSQLQuery = "DELETE FROM products WHERE id =(?)";
-        String insertSQLQuery = "INSERT INTO products values (50, 'Cherry tomatoes', 100);";
+        String deleteSQLQuery = "DELETE FROM cards WHERE id =(?)";
+        String insertSQLQuery = "INSERT INTO cards values (50, 'OTKRITIE','231 678', 2);";
         try {
             Statement statement = connection.createStatement();
             statement.execute(insertSQLQuery);
@@ -165,51 +163,52 @@ public class ProductRepositoryTest {
         }
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(deleteSQLQuery);
-            preparedStatement.setLong(1, firstProductId);
+            preparedStatement.setLong(1, firstCardId);
             deletedRows = preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(deletedRows, repository.delete(secondProductId));
-        Assertions.assertNotEquals(deletedRows, repository.delete(firstProductId)); //already deleted
+        Assertions.assertEquals(deletedRows, repository.delete(secondCardId));
+        Assertions.assertNotEquals(deletedRows, repository.delete(firstCardId)); //already deleted
     }
 
     @Test
-    @DisplayName("get user products")
-    void getUserProductsById() {
-        long id = 1;
-        List<Product> products;
-        String sqlQuery = "select p.id, p.title, p.price from products p join users_products up " +
-                "on p.id = up.product_id join users u on u.id = up.user_id and u.id = (?);";
+    @DisplayName("get user cards")
+    void getUserCards(){
+        List<Card> cards;
+        long userId = 2;
+        String sqlQuery = "SELECT c.id, c.title, c.number, c.fk_cards_users from cards c " +
+                "where fk_cards_users =(?)";
+
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, id);
+            preparedStatement.setLong(1, userId);
             ResultSet set = preparedStatement.executeQuery();
-            products = mapper.mapToProducts(set);
+            cards = mapper.mapToCards(set);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(products, repository.getUserProducts(id));
+        Assertions.assertEquals(cards, repository.getUserCards(userId));
     }
 
     @Test
-    @DisplayName("get user product by product id")
-    void getUserProductByProductId() {
-        Product product;
-        long userId = 3;
-        long productId = 5;
-        String sqlQuery = "select p.id, p.title, p.price from products p join users_products up " +
-                "on p.id = up.product_id and p.id = (?) join users u on u.id = up.user_id and u.id = (?);";
+    @DisplayName("get user card by card id")
+    void getUserCardByCardId(){
+        Card card;
+        long userId = 1;
+        long cardId = 2;
+        String sqlQuery = "SELECT id, title, number, fk_cards_users from cards " +
+                "where fk_cards_users = (?) and id = (?)";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, productId);
-            preparedStatement.setLong(2, userId);
+            preparedStatement.setLong(1, userId);
+            preparedStatement.setLong(2, cardId);
             ResultSet set = preparedStatement.executeQuery();
-            product = mapper.mapToProduct(set);
+            card = mapper.mapToCard(set);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(product, repository.getUserProductByProductId(5, 3));
+        Assertions.assertEquals(card, repository.getUserCardByCardId(userId, cardId));
     }
 
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.sviridov.entities.Card;
 import ru.sviridov.entities.Product;
 import ru.sviridov.entities.User;
+import ru.sviridov.mappers.RequestMapper;
 import ru.sviridov.services.CardService;
 import ru.sviridov.services.ProductService;
 import ru.sviridov.services.UserService;
@@ -21,26 +22,33 @@ public class RestUserServlet extends HttpServlet {
     private UserService userService;
     private CardService cardService;
     private ProductService productService;
+    private RequestMapper mapper;
+    PrintWriter printWriter;
+    public RestUserServlet(UserService userService, HttpServletResponse response) throws IOException {
+        this.userService = userService;
+        printWriter = response.getWriter();
+    }
 
     @Override
     public void init() {
         userService = new UserService();
         cardService = new CardService();
         productService = new ProductService();
+        mapper = new RequestMapper();
     }
 
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) {
         String pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         resp.setContentType("application/json; charset=UTF-8");
         try {
-            PrintWriter out = resp.getWriter();
+             printWriter = resp.getWriter();
             if (pathInfo == null || pathInfo.split("/").length == 0) {
                 String jsonUsers = new ObjectMapper().writeValueAsString(userService.getAll());
                 resp.setStatus(200);
-                out.write(jsonUsers);
+                printWriter.write(jsonUsers);
             } else {
                 String[] parts = pathInfo.split("/");
                 String firstId = parts[1];
@@ -49,12 +57,12 @@ public class RestUserServlet extends HttpServlet {
                     case 2: {
                         User user = userService.getById(userId);
                         if (user == null) {
-                            out.write("Not found");
+                            printWriter.write("Not found");
                             resp.setStatus(404);
                         } else {
                             final String jsonUser = new ObjectMapper().writeValueAsString(user);
                             resp.setStatus(200);
-                            out.write(jsonUser);
+                            printWriter.write(jsonUser);
                         }
                         break;
                     }
@@ -63,11 +71,11 @@ public class RestUserServlet extends HttpServlet {
                         if (entityName.equals("cards")) {
                             String jsonCards = new ObjectMapper().writeValueAsString(cardService.getUserCards(userId));
                             resp.setStatus(200);
-                            out.write(jsonCards);
+                            printWriter.write(jsonCards);
                         } else if (entityName.equals("products")) {
                             String jsonProducts = new ObjectMapper().writeValueAsString(productService.getUserProducts(userId));
                             resp.setStatus(200);
-                            out.write(jsonProducts);
+                            printWriter.write(jsonProducts);
                         }
                         break;
                     }
@@ -78,31 +86,31 @@ public class RestUserServlet extends HttpServlet {
                             long cardId = Long.parseLong(secondId);
                             Card card = cardService.getUserCardByCardId(userId, cardId);
                             if (card == null) {
-                                out.write("Card not found");
+                                printWriter.write("Card not found");
                                 resp.setStatus(404);
                             } else {
                                 final String jsonCard = new ObjectMapper().writeValueAsString(card);
                                 resp.setStatus(200);
-                                out.write(jsonCard);
+                                printWriter.write(jsonCard);
                             }
                         } else if (entityName.equals("products")) {
                             String secondId = parts[3];
                             long productId = Long.parseLong(secondId);
                             Product product = productService.getUserProductByProductId(productId, userId);
                             if (product == null) {
-                                out.write("Product not found");
+                                printWriter.write("Product not found");
                                 resp.setStatus(404);
                             } else {
                                 final String jsonProduct = new ObjectMapper().writeValueAsString(product);
                                 resp.setStatus(200);
-                                out.write(jsonProduct);
+                                printWriter.write(jsonProduct);
                             }
                         }
                         break;
                     }
                     default:
                         resp.setStatus(401);
-                        out.write("invalid request");
+                        printWriter.write("invalid request");
                 }
             }
         } catch (NumberFormatException | IOException e) {
@@ -118,7 +126,8 @@ public class RestUserServlet extends HttpServlet {
         if (pathInfo.matches("^/$")) {
             try {
                 PrintWriter out = resp.getWriter();
-                boolean isInserted = userService.insert(req);
+                User user = mapper.mapToUser(req);
+                boolean isInserted = userService.insert(user);
                 if (isInserted) {
                     out.write("User has added");
                     resp.setStatus(200);
@@ -133,7 +142,8 @@ public class RestUserServlet extends HttpServlet {
         } else if (pathInfo.matches("/purchase/$")) {
             try {
                 PrintWriter out = resp.getWriter();
-                int insertedRows = userService.addProductToUser(req);
+                String[] params = mapper.mapRequestForProductAndUser(req);
+                int insertedRows = userService.addProductToUser(params);
                 if (insertedRows == 0){
                     resp.setStatus(400);
                     out.write("couldn't add");
@@ -157,7 +167,8 @@ public class RestUserServlet extends HttpServlet {
             try {
                 long userId = Long.parseLong(parts[1]);
                 PrintWriter out = resp.getWriter();
-                long updatedRows = userService.update(userId, req);
+                User user = mapper.mapJsonToUser(req);
+                long updatedRows = userService.update(userId, user);
                 if (updatedRows != 0) {
                     out.write("User was updated");
                     resp.setStatus(200);

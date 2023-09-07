@@ -19,6 +19,9 @@ public class CardRepository implements JDBCRepository<Card> {
         sessionManager = new JDBCSessionManager();
     }
 
+    public CardRepository(SessionManager sessionManager){
+        this.sessionManager = sessionManager;
+    }
     public List<Card> getAll() {
         List<Card> cards = new ArrayList<>();
         sessionManager.beginSession();
@@ -136,5 +139,12 @@ public class CardRepository implements JDBCRepository<Card> {
             e.printStackTrace();
         }
         return card;
+    }
+
+    @Override
+    public String toString() {
+        return "CardRepository{" +
+                "sessionManager=" + sessionManager +
+                '}';
     }
 }

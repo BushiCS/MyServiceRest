@@ -61,5 +61,10 @@ public class JDBCSessionManager implements SessionManager, AutoCloseable {
         return connection;
     }
 
-
+    @Override
+    public String toString() {
+        return "JDBCSessionManager{" +
+                "connection=" + connection +
+                '}';
+    }
 }

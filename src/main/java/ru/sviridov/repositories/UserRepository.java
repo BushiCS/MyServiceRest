@@ -14,11 +14,13 @@ public class UserRepository implements JDBCRepository<User> {
 
     private final SessionManager sessionManager;
 
-    public UserRepository(SessionManager sessionManager){
-        this.sessionManager = sessionManager;
-    }
+
     public UserRepository() {
         this.sessionManager = new JDBCSessionManager();
+    }
+
+    public UserRepository(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
     }
 
     @Override
@@ -152,5 +154,13 @@ public class UserRepository implements JDBCRepository<User> {
             e.printStackTrace();
         }
         return insertedRows;
+    }
+
+    @Override
+    public String toString() {
+        return "UserRepository{" +
+                "mapper=" + mapper +
+                ", sessionManager=" + sessionManager +
+                '}';
     }
 }

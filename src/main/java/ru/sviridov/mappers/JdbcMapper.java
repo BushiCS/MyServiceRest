@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JdbcMapper {
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-
-
     public List<User> mapToUsers(ResultSet resultSet) throws SQLException {
         List<User> users = new ArrayList<>();
         CardRepository cardRepository = new CardRepository();
@@ -167,36 +163,8 @@ public class JdbcMapper {
         return product;
     }
 
-    public User mapJsonToUser(HttpServletRequest req) {
-        User user = null;
-        try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            user = objectMapper.readValue(requestBody, User.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return user;
-    }
-
-    public Card mapJsonToCard(HttpServletRequest req) {
-        Card card = null;
-        try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            card = objectMapper.readValue(requestBody, Card.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return card;
-    }
-
-    public Product mapJsonToProduct(HttpServletRequest req) throws IOException {
-        Product product = null;
-        try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            product = objectMapper.readValue(requestBody, Product.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return product;
+    @Override
+    public String toString() {
+        return "JdbcMapper{}";
     }
 }

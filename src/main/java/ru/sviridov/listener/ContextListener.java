@@ -23,11 +23,14 @@ public class ContextListener implements ServletContextListener {
         manager = new JDBCSessionManager();
         ServletContext context = sce.getServletContext();
         context.setAttribute("manager", manager);
-        createTableFromFile();
+        boolean is = createTableFromFile();
+        if (is){
+            System.out.println("table created");
+        }
     }
 
 
-    public void createTableFromFile() {
+    public boolean createTableFromFile() {
         String sqlFile = "/create-table-script.SQL";
         manager.beginSession();
         try (Connection connection = manager.getCurrentSession();
@@ -36,10 +39,11 @@ public class ContextListener implements ServletContextListener {
             if (inputStream != null) {
                 String query = new String(inputStream.readAllBytes());
                 statement.execute(query);
+                return true;
             }
         } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
-
+        return false;
     }
 }

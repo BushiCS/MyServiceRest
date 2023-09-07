@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.List;
 import java.util.Objects;
 
-@JsonPropertyOrder({"id","title","price"})
+@JsonPropertyOrder({"id", "title", "price"})
 
 public class Product {
     private long id;
@@ -40,9 +40,6 @@ public class Product {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return title;

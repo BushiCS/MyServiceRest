@@ -5,6 +5,8 @@ import ru.sviridov.entities.Card;
 import ru.sviridov.fabric.RepositoryFabric;
 import ru.sviridov.mappers.JdbcMapper;
 import ru.sviridov.repositories.CardRepository;
+import ru.sviridov.repositories.UserRepository;
+import ru.sviridov.sessions.SessionManager;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -12,16 +14,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class CardService implements EntityService<Card> {
-    private final ObjectMapper objectMapper;
 
     private final CardRepository cardRepository;
 
-    private final JdbcMapper mapper;
 
     public CardService() {
-        mapper = new JdbcMapper();
-        this.objectMapper = new ObjectMapper();
         this.cardRepository = RepositoryFabric.createCardRepository();
+    }
+
+    public CardService(SessionManager manager) {
+        cardRepository = new CardRepository(manager);
     }
 
     @Override
@@ -35,15 +37,16 @@ public class CardService implements EntityService<Card> {
     }
 
     @Override
-    public boolean insert(HttpServletRequest req) throws IOException {
-        String body = req.getReader().lines().collect(Collectors.joining());
-        Card card = objectMapper.readValue(body, Card.class);
+    public boolean insert(Card card) throws IOException {
         return cardRepository.insert(card);
     }
 
+    public CardRepository getCardRepository() {
+        return cardRepository;
+    }
+
     @Override
-    public long update(long id, HttpServletRequest req) throws IOException {
-        Card card = mapper.mapJsonToCard(req);
+    public long update(long id, Card card) throws IOException {
         return cardRepository.update(id, card);
     }
 

@@ -9,6 +9,7 @@ public class RepositoryFabric {
     private RepositoryFabric() {
     }
 
+
     public static UserRepository createUserRepository() {
         return new UserRepository();
     }
