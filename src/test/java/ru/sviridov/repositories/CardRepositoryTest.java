@@ -4,6 +4,7 @@ import org.junit.ClassRule;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.Card;
 import ru.sviridov.mappers.JdbcMapper;
 import ru.sviridov.sessionManager.SessionManagerImpl;
@@ -14,7 +15,7 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Testcontainers
 public class CardRepositoryTest {
 
     private static Statement statement;

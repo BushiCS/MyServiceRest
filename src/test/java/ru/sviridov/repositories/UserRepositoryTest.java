@@ -26,32 +26,34 @@ public class UserRepositoryTest {
     private static UserRepository repository;
 
     private final JdbcMapper mapper = new JdbcMapper();
-    @Container
-    @ClassRule
-    public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres")
-            .withUsername("postgres")
-            .withDatabaseName("my_db")
-            .withPassword("admin");
+
+    static PostgreSQLContainer<?> container;
 
     @BeforeAll
     public static void connect() {
-        postgreSQLContainer.start();
         try {
+            container = new PostgreSQLContainer<>("postgres");
+            container.start();
+
+            String jdbcUrl = container.getJdbcUrl();
+            String username = container.getUsername();
+            String password = container.getPassword();
+
             Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection(
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword()
-            );
+            connection = DriverManager.getConnection(jdbcUrl,username,password);
+
             statement = connection.createStatement();
             repository = new UserRepository(new SessionManagerImpl(
                     "org.postgresql.Driver",
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword()));
-        } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
+                    container.getJdbcUrl(),
+                    container.getUsername(),
+                    container.getPassword()));
+        } catch (SQLException e) {
+            throw new RuntimeException();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     @BeforeEach

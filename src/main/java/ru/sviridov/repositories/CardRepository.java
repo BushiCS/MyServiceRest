@@ -32,7 +32,6 @@ public class CardRepository implements JDBCRepository<Card> {
             cards = mapper.mapToCards(set);
             sessionManager.commitSession();
         } catch (SQLException e) {
-            sessionManager.rollbackSession();
             e.printStackTrace();
         }
         return cards;
