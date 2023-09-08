@@ -1,3 +1,5 @@
+package ru.sviridov.repositories;
+
 import org.junit.ClassRule;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -5,7 +7,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.Product;
 import ru.sviridov.mappers.JdbcMapper;
-import ru.sviridov.repositories.ProductRepository;
+import ru.sviridov.sessionManager.SessionManagerImpl;
 
 import java.io.IOException;
 import java.nio.file.Files;

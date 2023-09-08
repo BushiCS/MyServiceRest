@@ -1,3 +1,5 @@
+package ru.sviridov.sessionManager;
+
 import ru.sviridov.sessions.SessionManager;
 
 import java.sql.Connection;

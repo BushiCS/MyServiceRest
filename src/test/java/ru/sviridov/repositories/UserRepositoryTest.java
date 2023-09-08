@@ -1,3 +1,5 @@
+package ru.sviridov.repositories;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.ClassRule;
@@ -7,7 +9,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.User;
 import ru.sviridov.mappers.JdbcMapper;
-import ru.sviridov.repositories.UserRepository;
+import ru.sviridov.sessionManager.SessionManagerImpl;
 
 import java.io.IOException;
 import java.nio.file.Files;
