@@ -27,31 +27,28 @@ public class UserServiceTest {
     private static Statement statement;
 
     private static Connection connection;
-    @Container
-    @ClassRule
-    public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres")
-            .withUsername("postgres")
-            .withDatabaseName("my_db")
-            .withPassword("admin");
+
+    static PostgreSQLContainer<?> container;
+
 
 
     @BeforeAll
     public static void connect() {
-        postgreSQLContainer.start();
+        container = new PostgreSQLContainer<>("postgres");
+        container.start();
+        String jdbcUrl = container.getJdbcUrl();
+        String username = container.getUsername();
+        String password = container.getPassword();
+        container.start();
         try {
-            Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection(
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword()
-            );
+            connection = DriverManager.getConnection(jdbcUrl, username, password);
             statement = connection.createStatement();
             SessionManager manager = new SessionManagerImpl("org.postgresql.Driver",
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword());
+                    container.getJdbcUrl(),
+                    container.getUsername(),
+                    container.getPassword());
             service = new UserService(manager);
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

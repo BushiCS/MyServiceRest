@@ -2,10 +2,8 @@ package ru.sviridov.repositories;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.User;
 import ru.sviridov.mappers.JdbcMapper;
@@ -18,6 +16,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Testcontainers
 public class UserRepositoryTest {
@@ -34,14 +33,10 @@ public class UserRepositoryTest {
         try {
             container = new PostgreSQLContainer<>("postgres");
             container.start();
-
             String jdbcUrl = container.getJdbcUrl();
             String username = container.getUsername();
             String password = container.getPassword();
-
-            Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection(jdbcUrl,username,password);
-
+            connection = DriverManager.getConnection(jdbcUrl, username, password);
             statement = connection.createStatement();
             repository = new UserRepository(new SessionManagerImpl(
                     "org.postgresql.Driver",
@@ -50,19 +45,18 @@ public class UserRepositoryTest {
                     container.getPassword()));
         } catch (SQLException e) {
             throw new RuntimeException();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
-
     }
 
     @BeforeEach
     public void prepareData() {
-        try {
-            String sql = Files.lines(Paths.get("src/test/create-test-table.sql")).collect(Collectors.joining(" "));
+
+        try (Stream<String> lines = Files.lines(Paths.get("src/test/create-test-table.sql"))) {
+            String sql = lines.collect(Collectors.joining());
             statement.execute(sql);
         } catch (IOException | SQLException e) {
-            e.printStackTrace();
+            e.getLocalizedMessage();
+
         }
     }
 

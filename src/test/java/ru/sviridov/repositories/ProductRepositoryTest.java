@@ -8,6 +8,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.Product;
 import ru.sviridov.mappers.JdbcMapper;
 import ru.sviridov.sessionManager.SessionManagerImpl;
+import ru.sviridov.sessions.SessionManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,30 +26,25 @@ public class ProductRepositoryTest {
     private static ProductRepository repository;
 
     private final JdbcMapper mapper = new JdbcMapper();
-    @Container
-    @ClassRule
-    public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres")
-            .withUsername("postgres")
-            .withDatabaseName("my_db")
-            .withPassword("admin");
+
+    static PostgreSQLContainer<?> container;
 
     @BeforeAll
     public static void connect() {
-        postgreSQLContainer.start();
         try {
-            Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection(
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword()
-            );
+            container = new PostgreSQLContainer<>("postgres");
+            container.start();
+            String jdbcUrl = container.getJdbcUrl();
+            String username = container.getUsername();
+            String password = container.getPassword();
+            connection = DriverManager.getConnection(jdbcUrl, username, password);
             statement = connection.createStatement();
             repository = new ProductRepository(new SessionManagerImpl(
                     "org.postgresql.Driver",
-                    postgreSQLContainer.getJdbcUrl(),
-                    postgreSQLContainer.getUsername(),
-                    postgreSQLContainer.getPassword()));
-        } catch (ClassNotFoundException | SQLException e) {
+                    container.getJdbcUrl(),
+                    container.getUsername(),
+                    container.getPassword()));
+        } catch (SQLException e) {
             throw new RuntimeException();
         }
     }
