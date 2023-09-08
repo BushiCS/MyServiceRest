@@ -11,6 +11,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -21,17 +22,28 @@ public class RestProductServlet extends HttpServlet {
     private UserService userService;
     private ProductService productService;
     private RequestMapper mapper;
+    private PrintWriter printWriter;
+    private String pathInfo;
+    private BufferedReader bufferedReader;
 
-    @Override
-    public void init() {
+    public RestProductServlet(UserService userService, ProductService productService, HttpServletRequest request, HttpServletResponse response, ObjectMapper objectMapper) throws IOException {
+        this.userService = userService;
+        this.productService = productService;
+        printWriter = response.getWriter();
+        pathInfo = request.getPathInfo();
+        bufferedReader = request.getReader();
+        mapper = new RequestMapper(objectMapper,bufferedReader);
+    }
+
+    public RestProductServlet() {
         userService = new UserService();
         productService = new ProductService();
         mapper = new RequestMapper();
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         resp.setContentType("application/json; charset=UTF-8");
         try {
@@ -94,18 +106,18 @@ public class RestProductServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/$")) {
             try {
                 Product product = mapper.mapToProduct(req);
                 boolean isInserted = productService.insert(product);
                 if (isInserted) {
-                    resp.getWriter().write("Product has added");
+                    printWriter.write("Product has added");
                     resp.setStatus(200);
                 } else {
-                    resp.getWriter().write("Product hasn't been added");
+                    printWriter.write("Product hasn't been added");
                     resp.setStatus(400);
                 }
             } catch (IOException e) {
@@ -115,20 +127,21 @@ public class RestProductServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doPut(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/\\d+$")) {
             String[] parts = pathInfo.split("/");
             try {
+                printWriter = resp.getWriter();
                 long productId = Long.parseLong(parts[1]);
                 Product product = mapper.mapJsonToProduct(req);
                 long updatedRows = productService.update(productId, product);
                 if (updatedRows != 0) {
-                    resp.getWriter().write("Product was updated");
+                    printWriter.write("Product was updated");
                     resp.setStatus(200);
                 } else {
-                    resp.getWriter().write("Product not found");
+                    printWriter.write("Product not found");
                     resp.setStatus(400);
                 }
             } catch (IOException | NumberFormatException e) {
@@ -139,24 +152,27 @@ public class RestProductServlet extends HttpServlet {
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/\\d+$")) {
             String[] parts = pathInfo.split("/");
             try {
+                printWriter = resp.getWriter();
                 long productId = Long.parseLong(parts[1]);
                 long deletedRows = productService.deleteById(productId);
                 if (deletedRows != 0) {
                     resp.setStatus(200);
-                    resp.getWriter().write("Product has deleted");
+                    printWriter.write("Product has deleted");
                 } else {
                     resp.setStatus(400);
-                    resp.getWriter().write("couldn't delete");
+                    printWriter.write("couldn't delete");
                 }
-            } catch (IOException | NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 e.printStackTrace();
                 resp.setStatus(400);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }

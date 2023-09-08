@@ -60,8 +60,8 @@ public class RequestMapper {
     public Card mapJsonToCard(HttpServletRequest req) {
         Card card = null;
         try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            card = objectMapper.readValue(requestBody, Card.class);
+            bufferedReader = req.getReader();
+            card = objectMapper.readValue(bufferedReader, Card.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -76,8 +76,8 @@ public class RequestMapper {
     public Product mapJsonToProduct(HttpServletRequest req) throws IOException {
         Product product = null;
         try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            product = objectMapper.readValue(requestBody, Product.class);
+            bufferedReader = req.getReader();
+            product = objectMapper.readValue(bufferedReader, Product.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
