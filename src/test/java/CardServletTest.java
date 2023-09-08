@@ -5,13 +5,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import ru.sviridov.entities.Card;
-import ru.sviridov.entities.User;
 import ru.sviridov.mappers.RequestMapper;
 import ru.sviridov.services.CardService;
-import ru.sviridov.services.ProductService;
-import ru.sviridov.services.UserService;
 import ru.sviridov.servlets.RestCardServlet;
-import ru.sviridov.servlets.RestUserServlet;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,7 +19,7 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ProductServletTest {
+public class CardServletTest {
 
     HttpServletRequest request;
     HttpServletResponse response;
@@ -81,10 +77,13 @@ public class ProductServletTest {
     @Test
     @DisplayName("do put")
     void doPut() throws IOException {
-        Card card = new Card(1, "VTB", "123 321", 1);
+        Card card = new Card();
+        card.setTitle("VTB");
+        card.setNumber("123 321");
+        card.setUserId(1);
         long id = 1;
         long updatedRows = 1;
-        Mockito.when(request.getPathInfo()).thenReturn("/1");
+        Mockito.when(request.getPathInfo()).thenReturn("/6");
         restCardServlet.doPut(request,response);
         when(objectMapper.readValue(bufferedReader, Card.class)).thenReturn(card);
         mapper = new RequestMapper(objectMapper, bufferedReader);

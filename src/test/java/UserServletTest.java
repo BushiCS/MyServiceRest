@@ -29,7 +29,7 @@ public class UserServletTest {
     CardService cardService;
     ProductService productService;
     PrintWriter writer;
-    RestUserServlet restUserServlet;
+    RestUserServlet userServlet;
     BufferedReader bufferedReader;
     ObjectMapper objectMapper;
     RequestMapper mapper;
@@ -49,7 +49,7 @@ public class UserServletTest {
         bufferedReader = Mockito.mock(BufferedReader.class);
         Mockito.when(request.getReader()).thenReturn(bufferedReader);
 
-        restUserServlet = new RestUserServlet(userService, cardService, productService, request, response, objectMapper);
+        userServlet = new RestUserServlet(userService, cardService, productService, request, response, objectMapper);
         mapper = new RequestMapper(objectMapper, bufferedReader);
 
     }
@@ -57,7 +57,7 @@ public class UserServletTest {
     @Test
     @DisplayName("doGet test")
     void doGet() {
-        restUserServlet.doGet(request, response);
+
         long userId = 2;
         long productId = 1;
         long cardId = 3;
@@ -85,7 +85,7 @@ public class UserServletTest {
         Mockito.when(cardService.getUserCardByCardId(cardId, userId)).thenReturn(expectedUserCardById);
         Mockito.when(productService.getUserProducts(userId)).thenReturn(expectedUserProducts);
         Mockito.when(productService.getUserProductByProductId(productId, userId)).thenReturn(expectedUserProductById);
-
+        userServlet.doGet(request, response);
         Assertions.assertEquals(expectedUsers, userService.getAll());
         Assertions.assertEquals(expectedUserById, userService.getById(userId));
         Assertions.assertEquals(expectedUserCards, cardService.getUserCards(userId));
@@ -104,7 +104,6 @@ public class UserServletTest {
         product.setPrice(200);
         int expected = 1;
         when(objectMapper.readValue(bufferedReader, User.class)).thenReturn(user);
-        restUserServlet.doPost(request, response);
         when(userService.insert(user)).thenReturn(expectedInserted);
         mapper = new RequestMapper(objectMapper, bufferedReader);
         when(request.getPathInfo()).thenReturn("/purchases/");
@@ -114,9 +113,10 @@ public class UserServletTest {
         when(objectMapper.readValue("{\"name\":\"Bill\"}", User.class)).thenReturn(user);
         when(objectMapper.readValue("{\"title\":\"Cheese\"}", Product.class)).thenReturn(product);
 
-        restUserServlet.doPost(request, response);
+
         when(mapper.mapRequestForProductAndUser(request)).thenReturn(params);
         when(userService.addProductToUser(params)).thenReturn(expected);
+        userServlet.doPost(request, response);
         Assertions.assertTrue(userService.insert(user));
         Assertions.assertEquals(expected, userService.addProductToUser(params));
     }
@@ -127,12 +127,12 @@ public class UserServletTest {
         long id = 1;
         long updatedRows = 1;
         User user = new User(id, "Antonio");
-        restUserServlet.doPut(request, response);
         Mockito.when(request.getPathInfo()).thenReturn("/1");
         when(objectMapper.readValue(bufferedReader, User.class)).thenReturn(user);
         mapper = new RequestMapper(objectMapper, bufferedReader);
         when(mapper.mapJsonToUser(request)).thenReturn(user);
         when(userService.update(id, user)).thenReturn(updatedRows);
+        userServlet.doPut(request, response);
         Assertions.assertEquals(updatedRows,userService.update(id, user));
     }
 
@@ -141,10 +141,9 @@ public class UserServletTest {
     void doDelete(){
         long id = 1;
         long deletedRows = 1;
-        String pathInfo = "/";
-        restUserServlet.doDelete(request, response);
-        when(request.getPathInfo()).thenReturn(pathInfo);
+        when(request.getPathInfo()).thenReturn("/1");
         when(userService.deleteById(id)).thenReturn(deletedRows);
+        userServlet.doDelete(request, response);
         Assertions.assertEquals(deletedRows, userService.deleteById(id));
     }
 }
