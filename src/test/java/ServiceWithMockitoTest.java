@@ -39,18 +39,18 @@ public class ServiceWithMockitoTest {
     @DisplayName("get mock by id")
     void getById() {
         long id = 1;
-        User user = new User();
-        user.setId(id);
-        user.setName("Jack");
-        user.setCards(List.of(
+        User expectedUser = new User();
+        expectedUser.setId(id);
+        expectedUser.setName("Jack");
+        expectedUser.setCards(List.of(
                 new Card(1, "VTB", "321 123", 4),
                 new Card(2, "SBER", "235 173", 1)));
-        user.setProducts(List.of(
+        expectedUser.setProducts(List.of(
                 new Product(1, "Milk", 80),
                 new Product(2, "Cheese", 150)));
-        Mockito.when(userService.getById(id)).thenReturn(user);
-        User expected = userService.getById(id);
-        Assertions.assertEquals(user, expected);
+        Mockito.when(userService.getById(id)).thenReturn(expectedUser);
+        User actual = userService.getById(id);
+        Assertions.assertEquals(expectedUser, actual);
         Mockito.verify(userService).getById(id);
     }
 
