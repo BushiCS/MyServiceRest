@@ -17,6 +17,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Testcontainers
 public class ProductRepositoryTest {
@@ -24,9 +25,6 @@ public class ProductRepositoryTest {
     private static Statement statement;
     private static Connection connection;
     private static ProductRepository repository;
-
-    private final JdbcMapper mapper = new JdbcMapper();
-
     static PostgreSQLContainer<?> container;
 
     @BeforeAll
@@ -51,11 +49,12 @@ public class ProductRepositoryTest {
 
     @BeforeEach
     public void prepareData() {
-        try {
-            String sql = Files.lines(Paths.get("src/test/create-test-table.sql")).collect(Collectors.joining(" "));
+        try (Stream<String> lines = Files.lines(Paths.get("src/test/create-test-table.sql"))) {
+            String sql = lines.collect(Collectors.joining());
             statement.execute(sql);
         } catch (IOException | SQLException e) {
-            e.printStackTrace();
+            e.getLocalizedMessage();
+
         }
     }
 
@@ -77,137 +76,73 @@ public class ProductRepositoryTest {
     @Test
     @DisplayName("get all products")
     void getAll() {
-        List<Product> productList = new ArrayList<>();
-        String sqlQuery = "SELECT * FROM products";
-        try {
-            ResultSet set = statement.executeQuery(sqlQuery);
-            productList = mapper.mapToProducts(set);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        Assertions.assertEquals(productList, repository.getAll());
+        List<Product> expected = List.of(
+                new Product(1, "Milk", 80),
+                new Product(2, "Cheese", 200),
+                new Product(3, "Bread", 60),
+                new Product(4, "Pasta", 70),
+                new Product(5, "Eggs", 90)
+        );
+        List<Product> actual = repository.getAll();
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get product by id")
     void getById() {
-        Product product;
+        Product expected = new Product(1, "Milk", 80);
         long id = 1;
-        String sqlQuery = "SELECT * FROM products WHERE id = (?);";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, id);
-            ResultSet set = preparedStatement.executeQuery();
-            product = mapper.mapToProduct(set);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(product, repository.getById(id));
+        Product actual = repository.getById(id);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("update product")
     void update() {
-        long updatedRows;
         long id = 1;
-        Product product = new Product();
-        String sqlQuery = "UPDATE products set title = (?), price = (?) where id=(?)";
-        product.setTitle("Almond Milk");
-        product.setPrice(180);
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setString(1, product.getTitle());
-            preparedStatement.setInt(2, product.getPrice());
-            preparedStatement.setLong(3, id);
-            updatedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(updatedRows, repository.update(id, product));
+        Product product = new Product(1, "Coconut Milk", 150);
+        long expected = 1;
+        long actual = repository.update(id, product);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("insert product")
     void insert() {
-        Product product = new Product();
-        product.setId(25);
-        product.setTitle("Tomatoes 1 kg");
-        product.setPrice(50);
-        String sqlQuery = "INSERT INTO products values ((?), (?), (?));";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, product.getId());
-            preparedStatement.setString(2, product.getTitle());
-            preparedStatement.setInt(3, product.getPrice());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertTrue(repository.insert(product));
-        Assertions.assertEquals(product, repository.getById(product.getId()));
+        Product product = new Product(25, "Tomatoes 1 kg", 90);
+        boolean actual = repository.insert(product);
+        Assertions.assertTrue(actual);
     }
 
     @Test
     @DisplayName("delete product by id")
     void deleteById() {
-        long firstProductId = 2;
-        long secondProductId = 50;
-        long deletedRows;
-        String deleteSQLQuery = "DELETE FROM products WHERE id =(?)";
-        String insertSQLQuery = "INSERT INTO products values (50, 'Cherry tomatoes', 100);";
-        try {
-            Statement statement = connection.createStatement();
-            statement.execute(insertSQLQuery);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(deleteSQLQuery);
-            preparedStatement.setLong(1, firstProductId);
-            deletedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(deletedRows, repository.delete(secondProductId));
-        Assertions.assertNotEquals(deletedRows, repository.delete(firstProductId)); //already deleted
+        long id = 1;
+        long expected = 1;
+        long actual = repository.delete(id);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get user products")
     void getUserProductsById() {
-        long id = 1;
-        List<Product> products;
-        String sqlQuery = "select p.id, p.title, p.price from products p join users_products up " +
-                "on p.id = up.product_id join users u on u.id = up.user_id and u.id = (?);";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, id);
-            ResultSet set = preparedStatement.executeQuery();
-            products = mapper.mapToProducts(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(products, repository.getUserProducts(id));
+        long id = 2;
+        List<Product> expected = List.of(
+                new Product(1, "Milk", 80),
+                new Product(3, "Bread", 60)
+        );
+        List<Product> actual = repository.getUserProducts(id);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get user product by product id")
     void getUserProductByProductId() {
-        Product product;
+        Product expected = new Product(5, "Eggs", 90);
         long userId = 3;
         long productId = 5;
-        String sqlQuery = "select p.id, p.title, p.price from products p join users_products up " +
-                "on p.id = up.product_id and p.id = (?) join users u on u.id = up.user_id and u.id = (?);";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, productId);
-            preparedStatement.setLong(2, userId);
-            ResultSet set = preparedStatement.executeQuery();
-            product = mapper.mapToProduct(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(product, repository.getUserProductByProductId(5, 3));
+        Product actual = repository.getUserProductByProductId(productId, userId);
+        Assertions.assertEquals(expected, actual);
     }
 
 

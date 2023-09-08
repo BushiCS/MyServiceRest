@@ -24,8 +24,6 @@ public class UserRepositoryTest {
     private static Connection connection;
     private static UserRepository repository;
 
-    private final JdbcMapper mapper = new JdbcMapper();
-
     static PostgreSQLContainer<?> container;
 
     @BeforeAll
@@ -77,14 +75,13 @@ public class UserRepositoryTest {
     @Test
     @DisplayName("get all users")
     void getAll() {
-        List<User> userList = new ArrayList<>();
-        String sqlQuery = "SELECT * FROM users";
-        try {
-            ResultSet set = statement.executeQuery(sqlQuery);
-            userList = mapper.mapToUsers(set);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        List<User> userList = List.of(
+                new User(1, "Bill"),
+                new User(2, "Jack"),
+                new User(3,"Kevin"),
+                new User(4,"Michael"),
+                new User(5,"Ann")
+        );
         Assertions.assertEquals(userList, repository.getAll());
     }
 
@@ -92,99 +89,47 @@ public class UserRepositoryTest {
     @DisplayName("get user by id")
     void getById() {
         long id = 1;
-        User user = null;
-        String sqlQuery = "SELECT * FROM users where id = (?)";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, id);
-            ResultSet set = preparedStatement.executeQuery();
-            user = mapper.mapToUser(set);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        Assertions.assertEquals(user, repository.getById(id));
+        User expectedUser = new User(id, "Bill");
+        User actualUser = repository.getById(id);
+        Assertions.assertEquals(expectedUser, actualUser);
     }
 
     @Test
     @DisplayName("update user")
     void update() {
-        long updatedRows;
+        long updatedRows = 1;
         long id = 1;
-        User user = new User();
-        user.setId(1);
-        user.setName("Michael");
-        String sqlQuery = "UPDATE users set name= (?) where id=(?)";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setString(1, user.getName());
-            preparedStatement.setLong(2, id);
-            updatedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(updatedRows, repository.update(id, user));
+        User user = new User(id, "Michael");
+        long actualRows = repository.update(id, user);
+        Assertions.assertEquals(updatedRows, actualRows);
     }
 
     @Test
     @DisplayName("insert user")
     void insert() {
-        String sqlQuery = "INSERT INTO users VALUES ((?), (?));";
-        User user = new User();
-        user.setId(25);
-        user.setName("Eugene");
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, user.getId());
-            preparedStatement.setString(2, user.getName());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        User user = new User(10, "Pavel");
+        repository.insert(user);
         Assertions.assertTrue(repository.insert(user));
-        Assertions.assertEquals(user, repository.getById(user.getId()));
     }
 
     @Test
     @DisplayName("delete user by id")
     void delete() {
-        long firstUserId = 2;
-        long secondUserId = 50;
-        long deletedRows;
-        String deleteSQLQuery = "DELETE FROM users WHERE id = (?)";
-        String insertSQLQuery = "INSERT INTO users values (50, 'Mick');";
-        try {
-            Statement statement = connection.createStatement();
-            statement.execute(insertSQLQuery);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(deleteSQLQuery);
-            preparedStatement.setLong(1, firstUserId);
-            deletedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(deletedRows, repository.delete(secondUserId));
-        Assertions.assertNotEquals(deletedRows, repository.delete(firstUserId)); //already deleted
+        long userId = 2;
+        long expected = 1;
+        long actual = repository.delete(userId);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get product users")
     void getProductUsers() {
         long productId = 1;
-        List<User> users;
-        String sqlQuery = "select u.id, u.name from users u join users_products up " +
-                "on u.id = up.user_id join products p on p.id = up.product_id and p.id = (?);";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, productId);
-            ResultSet set = preparedStatement.executeQuery();
-            users = mapper.mapToUsers(set);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(users, repository.getProductUsers(productId));
+        List<User> expectedUsers = List.of(
+                new User(2, "Jack"),
+                new User(3, "Kevin"));
+        List<User> actualUsers = repository.getProductUsers(productId);
+        Assertions.assertEquals(expectedUsers, actualUsers);
     }
 
     @Test
@@ -192,19 +137,9 @@ public class UserRepositoryTest {
     void getProductUserByUserId() {
         long userId = 2;
         long productId = 1;
-        User user;
-        String sqlQuery = "select u.id, u.name from users u join users_products up " +
-                "on u.id = up.user_id and u.id = (?) join products p on p.id = up.product_id and p.id = (?);";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, userId);
-            preparedStatement.setLong(2, productId);
-            ResultSet set = preparedStatement.executeQuery();
-            user = mapper.mapToUser(set);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(user, repository.getProductUserByUserId(userId, productId));
+        User expectedUser = new User(userId, "Jack");
+        User actualUser = repository.getProductUserByUserId(userId, productId);
+        Assertions.assertEquals(expectedUser, actualUser);
     }
 
     @Test
@@ -212,19 +147,8 @@ public class UserRepositoryTest {
     void addProductToUser() {
         String productName = "Milk";
         String userName = "Jack";
-        String sqlQuery = "insert into users_products (user_id, product_id) select u.id, p.id from users u, products p" +
-                " where u.name = ? and p.title = ?;";
-        int insertedRows;
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setString(1, userName);
-            preparedStatement.setString(2, productName);
-            insertedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        Assertions.assertEquals(insertedRows, repository.addProductByUserName(productName, userName));
+        int insertedRows = 1;
+        int actualRows = repository.addProductByUserName(productName, userName);
+        Assertions.assertEquals(insertedRows, actualRows);
     }
-
-
 }

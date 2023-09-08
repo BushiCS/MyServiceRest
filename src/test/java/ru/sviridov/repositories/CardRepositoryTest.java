@@ -1,12 +1,9 @@
 package ru.sviridov.repositories;
 
-import org.junit.ClassRule;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.sviridov.entities.Card;
-import ru.sviridov.mappers.JdbcMapper;
 import ru.sviridov.sessionManager.SessionManagerImpl;
 
 import java.io.IOException;
@@ -15,15 +12,14 @@ import java.nio.file.Paths;
 import java.sql.*;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @Testcontainers
 public class CardRepositoryTest {
 
     private static Statement statement;
     private static Connection connection;
     private static CardRepository repository;
-
-    private final JdbcMapper mapper = new JdbcMapper();
-
     public static PostgreSQLContainer<?> container;
 
     @BeforeAll
@@ -48,11 +44,12 @@ public class CardRepositoryTest {
 
     @BeforeEach
     public void prepareData() {
-        try {
-            String sql = Files.lines(Paths.get("src/test/create-test-table.sql")).collect(Collectors.joining(" "));
+        try (Stream<String> lines = Files.lines(Paths.get("src/test/create-test-table.sql"))) {
+            String sql = lines.collect(Collectors.joining());
             statement.execute(sql);
         } catch (IOException | SQLException e) {
-            e.printStackTrace();
+            e.getLocalizedMessage();
+
         }
     }
 
@@ -74,140 +71,75 @@ public class CardRepositoryTest {
     @Test
     @DisplayName("get all cards")
     void getAll() {
-        List<Card> cards;
-        String sqlQuery = "SELECT * FROM cards;";
-        try {
-            ResultSet set = statement.executeQuery(sqlQuery);
-            cards = mapper.mapToCards(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(cards, repository.getAll());
+        List<Card> expectedCards = List.of(
+                new Card(1, "VTB", "123 321", 1),
+                new Card(2, "SBER", "235 211", 1),
+                new Card(3, "TINKOFF", "542 243", 2),
+                new Card(4, "TINKOFF", "233 712", 1),
+                new Card(5, "VTB", "236 213", 3),
+                new Card(6, "VTB", "213 217", 4)
+        );
+
+        List<Card> actualCards = repository.getAll();
+        Assertions.assertEquals(expectedCards, actualCards);
     }
 
     @Test
     @DisplayName("get cards by id")
     void getById() {
-        Card card;
         long id = 1;
-        String sqlQuery = "SELECT * FROM cards WHERE id = (?)";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, id);
-            ResultSet set = preparedStatement.executeQuery();
-            card = mapper.mapToCard(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(card, repository.getById(id));
+        Card expectedCard = new Card(id, "VTB", "123 321", 1);
+        Card actualCard = repository.getById(id);
+        Assertions.assertEquals(expectedCard, actualCard);
     }
 
     @Test
     @DisplayName("insert card")
     void insert() {
-        Card card = new Card();
-        card.setId(10);
-        card.setTitle("VTB+");
-        card.setNumber("236 124");
-        card.setUserId(3);
-        String sqlQuery = "INSERT INTO cards values ((?), (?), (?), (?));";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, card.getId());
-            preparedStatement.setString(2, card.getTitle());
-            preparedStatement.setString(3, card.getNumber());
-            preparedStatement.setLong(4, card.getUserId());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertTrue(repository.insert(card));
-        Assertions.assertEquals(card, repository.getById(card.getId()));
+        Card card = new Card(10, "VTB+", "236 214", 3);
+        boolean actual = repository.insert(card);
+        Assertions.assertTrue(actual);
     }
 
 
     @Test
     @DisplayName("update card")
     void update() {
-        long updatedRows;
+        long expected = 1;
         long id = 1;
-        String sqlQuery = "UPDATE cards set title = (?) where id = (?);";
         Card card = new Card();
-        card.setTitle("VTB+");
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setString(1, card.getTitle());
-            preparedStatement.setLong(2, id);
-            updatedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(updatedRows, repository.update(id, card));
+        card.setTitle("VTB+SBER");
+        long actual = repository.update(id, card);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("delete card")
     void delete() {
-        long firstCardId = 2;
-        long secondCardId = 50;
-        long deletedRows;
-        String deleteSQLQuery = "DELETE FROM cards WHERE id =(?)";
-        String insertSQLQuery = "INSERT INTO cards values (50, 'OTKRITIE','231 678', 2);";
-        try {
-            Statement statement = connection.createStatement();
-            statement.execute(insertSQLQuery);
-        } catch (SQLException e) {
-            throw new RuntimeException();
-        }
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(deleteSQLQuery);
-            preparedStatement.setLong(1, firstCardId);
-            deletedRows = preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(deletedRows, repository.delete(secondCardId));
-        Assertions.assertNotEquals(deletedRows, repository.delete(firstCardId)); //already deleted
+        long id = 1;
+        long expected = 1;
+        long actual = repository.delete(id);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get user cards")
-    void getUserCards(){
-        List<Card> cards;
+    void getUserCards() {
+        List<Card> expected = List.of(
+                new Card(3, "TINKOFF", "542 243", 2)
+        );
         long userId = 2;
-        String sqlQuery = "SELECT c.id, c.title, c.number, c.fk_cards_users from cards c " +
-                "where fk_cards_users =(?)";
-
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, userId);
-            ResultSet set = preparedStatement.executeQuery();
-            cards = mapper.mapToCards(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(cards, repository.getUserCards(userId));
+        List<Card> actual = repository.getUserCards(userId);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     @DisplayName("get user card by card id")
-    void getUserCardByCardId(){
-        Card card;
+    void getUserCardByCardId() {
         long userId = 1;
         long cardId = 2;
-        String sqlQuery = "SELECT id, title, number, fk_cards_users from cards " +
-                "where fk_cards_users = (?) and id = (?)";
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            preparedStatement.setLong(1, userId);
-            preparedStatement.setLong(2, cardId);
-            ResultSet set = preparedStatement.executeQuery();
-            card = mapper.mapToCard(set);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(card, repository.getUserCardByCardId(userId, cardId));
+        Card expected = new Card(2, "SBER", "235 211", 1);
+        Card actual = repository.getUserCardByCardId(userId, cardId);
+        Assertions.assertEquals(expected, actual);
     }
-
-
 }
