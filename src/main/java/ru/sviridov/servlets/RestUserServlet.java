@@ -13,6 +13,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
@@ -23,14 +24,21 @@ public class RestUserServlet extends HttpServlet {
     private CardService cardService;
     private ProductService productService;
     private RequestMapper mapper;
-    PrintWriter printWriter;
-    public RestUserServlet(UserService userService, HttpServletResponse response) throws IOException {
+
+    private PrintWriter printWriter;
+    private String pathInfo;
+    private BufferedReader bufferedReader;
+    public RestUserServlet(UserService userService, CardService cardService, ProductService productService, HttpServletRequest request, HttpServletResponse response,ObjectMapper objectMapper) throws IOException {
         this.userService = userService;
+        this.cardService = cardService;
+        this.productService = productService;
         printWriter = response.getWriter();
+        pathInfo = request.getPathInfo();
+        bufferedReader = request.getReader();
+        mapper = new RequestMapper(objectMapper,bufferedReader);
     }
 
-    @Override
-    public void init() {
+    public RestUserServlet(){
         userService = new UserService();
         cardService = new CardService();
         productService = new ProductService();
@@ -38,9 +46,10 @@ public class RestUserServlet extends HttpServlet {
     }
 
 
+
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         resp.setContentType("application/json; charset=UTF-8");
         try {
@@ -120,8 +129,8 @@ public class RestUserServlet extends HttpServlet {
 
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doPost(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/$")) {
             try {
@@ -159,21 +168,21 @@ public class RestUserServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doPut(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/\\d+$")) {
             String[] parts = pathInfo.split("/");
             try {
                 long userId = Long.parseLong(parts[1]);
-                PrintWriter out = resp.getWriter();
+                printWriter = resp.getWriter();
                 User user = mapper.mapJsonToUser(req);
                 long updatedRows = userService.update(userId, user);
                 if (updatedRows != 0) {
-                    out.write("User was updated");
+                    printWriter.write("User was updated");
                     resp.setStatus(200);
                 } else {
-                    out.write("User not found");
+                    printWriter.write("User not found");
                     resp.setStatus(400);
                 }
             } catch (NumberFormatException | IOException e) {
@@ -185,21 +194,21 @@ public class RestUserServlet extends HttpServlet {
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        String pathInfo = req.getPathInfo();
+    public void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        pathInfo = req.getPathInfo();
         setCharacterEncoding(req);
         if (pathInfo.matches("^/\\d+$")) {
             String[] parts = pathInfo.split("/");
             try {
-                PrintWriter out = resp.getWriter();
+                printWriter = resp.getWriter();
                 long userId = Long.parseLong(parts[1]);
                 long deletedRows = userService.deleteById(userId);
                 if (deletedRows != 0) {
                     resp.setStatus(200);
-                    out.write("User was deleted");
+                    printWriter.write("User was deleted");
                 } else {
                     resp.setStatus(400);
-                    out.write("couldn't delete");
+                    printWriter.write("couldn't delete");
                 }
             } catch (NumberFormatException | IOException e) {
                 e.printStackTrace();

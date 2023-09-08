@@ -1,21 +1,34 @@
 package ru.sviridov.mappers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ru.sviridov.entities.Card;
 import ru.sviridov.entities.Product;
 import ru.sviridov.entities.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 
 public class RequestMapper {
-    ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper;
+    private BufferedReader bufferedReader;
+
+    public RequestMapper() {
+        objectMapper = new ObjectMapper();
+    }
+
+    public RequestMapper(ObjectMapper objectMapper, BufferedReader bufferedReader) {
+        this.objectMapper = objectMapper;
+        this.bufferedReader = bufferedReader;
+    }
 
     public String[] mapRequestForProductAndUser(HttpServletRequest req) throws IOException {
         String[] names = new String[0];
-        String body = req.getReader().lines().collect(Collectors.joining());
+        Stream<String> lines = bufferedReader.lines();
+        String body = lines.collect(Collectors.joining());
         String cutArrayBrackets = body.substring(1, body.length() - 1);
         if (cutArrayBrackets.split(",").length != 0) {
             String[] split = cutArrayBrackets.split(",");
@@ -29,15 +42,15 @@ public class RequestMapper {
     }
 
     public User mapToUser(HttpServletRequest req) throws IOException {
-        String body = req.getReader().lines().collect(Collectors.joining());
-        return objectMapper.readValue(body, User.class);
+        bufferedReader = req.getReader();
+        return objectMapper.readValue(bufferedReader, User.class);
     }
 
     public User mapJsonToUser(HttpServletRequest req) {
         User user = null;
         try {
-            String requestBody = req.getReader().lines().collect(Collectors.joining());
-            user = objectMapper.readValue(requestBody, User.class);
+            bufferedReader = req.getReader();
+            user = objectMapper.readValue(bufferedReader, User.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
