@@ -83,7 +83,7 @@ public class CardServletTest {
         card.setUserId(1);
         long id = 1;
         long updatedRows = 1;
-        Mockito.when(request.getPathInfo()).thenReturn("/6");
+        Mockito.when(request.getPathInfo()).thenReturn("/1");
         restCardServlet.doPut(request,response);
         when(objectMapper.readValue(bufferedReader, Card.class)).thenReturn(card);
         mapper = new RequestMapper(objectMapper, bufferedReader);
