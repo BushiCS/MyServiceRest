@@ -18,7 +18,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.Mockito.*;
@@ -100,8 +99,6 @@ public class UserServletTest {
     void doPost() throws IOException {
         boolean expectedInserted = true;
         User user = new User(10, "Alex");
-        User user1 = new User();
-        user1.setName("Bill");
         Product product = new Product();
         product.setTitle("Cheese");
         product.setPrice(200);
@@ -122,5 +119,32 @@ public class UserServletTest {
         when(userService.addProductToUser(params)).thenReturn(expected);
         Assertions.assertTrue(userService.insert(user));
         Assertions.assertEquals(expected, userService.addProductToUser(params));
+    }
+
+    @Test
+    @DisplayName("doPut test")
+    void doPut() throws IOException {
+        long id = 1;
+        long updatedRows = 1;
+        User user = new User(id, "Antonio");
+        restUserServlet.doPut(request, response);
+        Mockito.when(request.getPathInfo()).thenReturn("/1");
+        when(objectMapper.readValue(bufferedReader, User.class)).thenReturn(user);
+        mapper = new RequestMapper(objectMapper, bufferedReader);
+        when(mapper.mapJsonToUser(request)).thenReturn(user);
+        when(userService.update(id, user)).thenReturn(updatedRows);
+        Assertions.assertEquals(updatedRows,userService.update(id, user));
+    }
+
+    @Test
+    @DisplayName("doDelete test")
+    void doDelete(){
+        long id = 1;
+        long deletedRows = 1;
+        String pathInfo = "/";
+        restUserServlet.doDelete(request, response);
+        when(request.getPathInfo()).thenReturn(pathInfo);
+        when(userService.deleteById(id)).thenReturn(deletedRows);
+        Assertions.assertEquals(deletedRows, userService.deleteById(id));
     }
 }
